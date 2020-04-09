@@ -5,6 +5,8 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 var Db *sqlx.DB
@@ -16,16 +18,9 @@ const (
 	DB_NAME     = ""
 )
 
-var schema = `
-CREATE TABLE IF NOT EXISTS public.api_users (
-uuid varchar not null primary key,
-name varchar,
-lastname varchar,
-birthdate timestamp
-);
-`
-
 func MustNewDB() {
+	wd, _ := os.Getwd()
+	sqlPath := filepath.Join(filepath.Dir(wd), "scripts", "sql", "users.sql")
 	var err error
 	dbinfo := fmt.Sprintf("postgres://%s:%s@%s:5432/%s",
 		DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
@@ -33,5 +28,8 @@ func MustNewDB() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	Db.MustExec(schema)
+	_, sqlErr := sqlx.LoadFile(Db, sqlPath)
+	if sqlErr != nil {
+		log.Fatalf("Can't apply DB schema")
+	}
 }

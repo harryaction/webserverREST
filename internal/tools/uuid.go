@@ -2,7 +2,8 @@ package tools
 
 import guuid "github.com/google/uuid"
 
-func GenUUID() string {
+func GenUUID() *string {
 	id, _ := guuid.NewRandom()
-	return id.String()
+	uuid := id.String()
+	return &uuid
 }

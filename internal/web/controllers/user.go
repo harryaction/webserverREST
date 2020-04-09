@@ -2,85 +2,85 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"net/http"
 	"webserverREST/internal/model"
 	"webserverREST/internal/repositories"
+	"webserverREST/internal/tools"
 	"webserverREST/internal/web/binders"
 )
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	body, err := binders.Parse(r, true, false)
-	if err != nil {
-		http.Error(w, "can't read body", http.StatusBadRequest)
-	} else {
-		response := model.UserModel{
-			Id:        body.Id,
-			Name:      body.Name,
-			Lastname:  body.Lastname,
-			Age:       body.Age,
-			Birthdate: body.Birthdate,
-		}
-		u := repositories.NewUser()
-		err := u.Put(response)
-		if err != nil {
-			w.Header().Set("Server", "REST SERVER")
-			http.Error(w, "db error", http.StatusInternalServerError)
+type User interface {
+	Create(w http.ResponseWriter, req *http.Request)
+	Edit(w http.ResponseWriter, req *http.Request)
+	Get(w http.ResponseWriter, req *http.Request)
+	Delete(w http.ResponseWriter, req *http.Request)
+}
+
+type user struct {
+	repo repositories.User
+}
+
+func NewUser(repo repositories.User) User {
+	return &user{repo: repo}
+}
+
+func (u user) Create(w http.ResponseWriter, req *http.Request) {
+	if response := context.Get(req, binders.Body); response != nil {
+		response := response.(*model.UserModel)
+		if (response.Name != nil) && (response.Lastname != nil) && (response.Birthdate != nil) {
+			response.Id = tools.GenUUID()
+			err := u.repo.Put(response)
+			if err != nil {
+				http.Error(w, "DB error", http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(response)
+			}
 		} else {
-			w.Header().Set("Server", "REST SERVER")
-			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(response)
+			http.Error(w, "JSON parsing error", http.StatusBadRequest)
 		}
+	} else {
+		http.Error(w, "JSON parsing error", http.StatusBadRequest)
 	}
 }
 
-func DropUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func (u user) Delete(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
 	id, _ := vars["id"]
-	u := repositories.NewUser()
-	err := u.Delete(id)
+	err := u.repo.Delete(id)
 	if err != nil {
-		w.Header().Set("Server", "REST SERVER")
-		http.Error(w, "db error", http.StatusInternalServerError)
+		http.Error(w, "DB error", http.StatusInternalServerError)
 	} else {
-		w.Header().Set("Server", "REST SERVER")
 		w.WriteHeader(200)
 	}
 }
 
-func EditUser(w http.ResponseWriter, r *http.Request) {
-	body, err := binders.Parse(r, false, true)
-	if err != nil {
-		http.Error(w, "can't read body", http.StatusBadRequest)
-	} else {
-		response := model.UserModel{
-			Id:        body.Id,
-			Name:      body.Name,
-			Lastname:  body.Lastname,
-			Age:       body.Age,
-			Birthdate: body.Birthdate,
-		}
-		u := repositories.NewUser()
-		err := u.Put(response)
-		if err != nil {
-			w.Header().Set("Server", "REST SERVER")
-			http.Error(w, "db error", http.StatusInternalServerError)
+func (u user) Edit(w http.ResponseWriter, req *http.Request) {
+	if response := context.Get(req, binders.Body); response != nil {
+		response := response.(*model.UserModel)
+		if response.Id != nil {
+			err := u.repo.Put(response)
+			if err != nil {
+				http.Error(w, "DB error", http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(response)
+			}
 		} else {
-			w.Header().Set("Server", "REST SERVER")
-			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(response)
+			http.Error(w, "JSON parsing error", http.StatusBadRequest)
 		}
+	} else {
+		http.Error(w, "JSON parsing error", http.StatusBadRequest)
 	}
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
-	u := repositories.NewUser()
-	response, err := u.Get()
+func (u user) Get(w http.ResponseWriter, req *http.Request) {
+	response, err := u.repo.Get()
 	if err != nil {
-		w.Header().Set("Server", "REST SERVER")
-		http.Error(w, "db error", http.StatusInternalServerError)
+		http.Error(w, "DB error", http.StatusInternalServerError)
 	} else {
-		w.Header().Set("Server", "REST SERVER")
 		w.WriteHeader(200)
 		json.NewEncoder(w).Encode(response)
 	}

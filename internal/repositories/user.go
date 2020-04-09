@@ -8,7 +8,7 @@ import (
 )
 
 type User interface {
-	Put(u model.UserModel) error
+	Put(u *model.UserModel) error
 	Delete(ID string) error
 	Get() ([]model.UserModel, error)
 }
@@ -19,7 +19,7 @@ func NewUser() User {
 	return new(user)
 }
 
-func (user) Put(u model.UserModel) error {
+func (user) Put(u *model.UserModel) error {
 	userData := `INSERT INTO public.api_users(uuid, 
                              name, 
                              lastname, 
