@@ -31,6 +31,7 @@ func (u user) Create(w http.ResponseWriter, req *http.Request) {
 		response := response.(*model.UserModel)
 		if (response.Name != nil) && (response.Lastname != nil) && (response.Birthdate != nil) {
 			response.Id = tools.GenUUID()
+			response.Age = tools.Age(*response.Birthdate)
 			err := u.repo.Put(response)
 			if err != nil {
 				http.Error(w, "DB error", http.StatusInternalServerError)
@@ -82,6 +83,10 @@ func (u user) Get(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "DB error", http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(200)
+		if response == nil {
+			response = []model.UserModel{}
+		}
 		json.NewEncoder(w).Encode(response)
 	}
+
 }

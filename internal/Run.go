@@ -2,6 +2,8 @@ package internal
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
+	"log"
 	"net/http"
 	"webserverREST/datasource"
 	"webserverREST/internal/repositories"
@@ -9,20 +11,40 @@ import (
 	"webserverREST/internal/web/handlers"
 )
 
-func Run() {
-	datasource.MustNewDB()
-	c := userController()
+const (
+	DB_HOST     = "178.62.8.121"
+	DB_USER     = "alivedbuser"
+	DB_PASSWORD = "7avsd84Egs_awNS4DXV"
+	DB_NAME     = "thriatlonstore"
+	WWW_PORT    = ":8080"
+)
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.Use(handlers.Parse)
-	router.HandleFunc("/users", c.Create).Methods("POST")
-	router.HandleFunc("/users", c.Get).Methods("GET")
-	router.HandleFunc("/user/{id}", c.Delete).Methods("DELETE")
-	router.HandleFunc("/user", c.Edit).Methods("PUT")
-	http.ListenAndServe(":8080", router)
+type Api struct {
+	Router     *mux.Router
+	Controller controllers.User
+	DB         *sqlx.DB
 }
 
-func userController() controllers.User {
-	repo := repositories.NewUser()
-	return controllers.NewUser(repo)
+func (a *Api) Setup() {
+	if a.DB == nil {
+		a.DB = datasource.MustNewDB()
+	}
+	repo := repositories.NewUser(a.DB)
+	a.Controller = controllers.NewUser(repo)
+	a.Router = mux.NewRouter().StrictSlash(true)
+	a.Router.Use(handlers.Parse)
+	a.Router.HandleFunc("/users", a.Controller.Create).Methods("POST")
+	a.Router.HandleFunc("/users", a.Controller.Get).Methods("GET")
+	a.Router.HandleFunc("/users/{id}", a.Controller.Delete).Methods("DELETE")
+	a.Router.HandleFunc("/users", a.Controller.Edit).Methods("PUT")
+}
+
+func (a *Api) Run() {
+	log.Fatalln(http.ListenAndServe(":8080", a.Router))
+}
+
+func Run() {
+	a := Api{}
+	a.Setup()
+	a.Run()
 }

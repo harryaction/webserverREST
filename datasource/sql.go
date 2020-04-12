@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 )
 
-var Db *sqlx.DB
-
 const (
 	DB_HOST     = ""
 	DB_USER     = ""
@@ -18,13 +16,13 @@ const (
 	DB_NAME     = ""
 )
 
-func MustNewDB() {
+func MustNewDB() *sqlx.DB {
 	wd, _ := os.Getwd()
 	sqlPath := filepath.Join(filepath.Dir(wd), "scripts", "sql", "users.sql")
 	var err error
-	dbinfo := fmt.Sprintf("postgres://%s:%s@%s:5432/%s",
+	dbInfo := fmt.Sprintf("postgres://%s:%s@%s:5432/%s",
 		DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
-	Db, err = sqlx.Connect("pgx", dbinfo)
+	Db, err := sqlx.Connect("pgx", dbInfo)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -32,4 +30,5 @@ func MustNewDB() {
 	if sqlErr != nil {
 		log.Fatalf("Can't apply DB schema")
 	}
+	return Db
 }
