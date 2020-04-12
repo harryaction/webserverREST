@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 	"webserverREST/internal"
 	"webserverREST/internal/model"
 )
@@ -80,6 +81,33 @@ func (s *Suite) TestPut() {
 	err := json.Unmarshal([]byte(response.Body.String()), responseData)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "ebdded24-d979-485d-b1cb-4ae179da787c", *responseData.Id)
+}
+
+func (s *Suite) TestGet() {
+	var (
+		id       = "ebdded24-d979-485d-b1cb-4ae179da787c"
+		name     = "Trevor"
+		lastname = "Young"
+		str      = "2005-05-05T00:00:00Z"
+	)
+	layout := "2006-01-02T15:04:05.000Z"
+	t, _ := time.Parse(layout, str)
+	req, _ := http.NewRequest("GET", "/users", nil)
+	s.mock.ExpectQuery(regexp.QuoteMeta(
+		`SELECT uuid id, name, lastname, birthdate, 0 age FROM public.api_users`)).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "lastname", "birthdate", "age"}).AddRow(id, name, lastname, t, 0))
+	response := executeRequest(s.api, req)
+	assert.Equal(s.T(), http.StatusOK, response.Code)
+	responseData := &[]model.UserModel{}
+	err := json.Unmarshal([]byte(response.Body.String()), responseData)
+	require.NoError(s.T(), err)
+}
+
+func (s *Suite) TestDelete() {
+	req, _ := http.NewRequest("DELETE", "/users/ebdded24-d979-485d-b1cb-4ae179da787c", nil)
+	s.mock.ExpectExec(regexp.QuoteMeta(
+		`DELETE FROM public.api_users WHERE uuid = $1`)).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+	response := executeRequest(s.api, req)
+	assert.Equal(s.T(), http.StatusOK, response.Code)
 }
 
 func (s *Suite) AfterTest(_, _ string) {
