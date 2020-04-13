@@ -5,18 +5,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
-	"webserverREST/datasource"
+	"webserverREST/internal/datasource"
 	"webserverREST/internal/repositories"
 	"webserverREST/internal/web/controllers"
 	"webserverREST/internal/web/handlers"
-)
-
-const (
-	DB_HOST     = "178.62.8.121"
-	DB_USER     = "alivedbuser"
-	DB_PASSWORD = "7avsd84Egs_awNS4DXV"
-	DB_NAME     = "thriatlonstore"
-	WWW_PORT    = ":8080"
 )
 
 type Api struct {
@@ -26,9 +18,6 @@ type Api struct {
 }
 
 func (a *Api) Setup() {
-	if a.DB == nil {
-		a.DB = datasource.MustNewDB()
-	}
 	repo := repositories.NewUser(a.DB)
 	a.Controller = controllers.NewUser(repo)
 	a.Router = mux.NewRouter().StrictSlash(true)
@@ -44,7 +33,8 @@ func (a *Api) Run() {
 }
 
 func Run() {
-	a := Api{}
+	db := datasource.MustNewDB()
+	a := Api{DB: db}
 	a.Setup()
 	a.Run()
 }

@@ -6,12 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"webserverREST/internal/constants"
 	"webserverREST/internal/model"
 )
-
-type key int
-
-const Body key = 0
 
 func BodyParse(r *http.Request) {
 	data := &model.UserModel{}
@@ -23,7 +20,7 @@ func BodyParse(r *http.Request) {
 		if err != nil {
 			log.Printf("Error parsing body: %v", err)
 		} else {
-			context.Set(r, Body, data)
+			context.Set(r, constants.Body, data)
 		}
 	}
 }

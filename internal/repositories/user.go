@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"webserverREST/internal/model"
@@ -31,7 +30,7 @@ func (a user) Put(u *model.UserModel) error {
 	_, err := a.DB.Exec(userData, u.Id, u.Name, u.Lastname, u.Birthdate)
 	if err != nil {
 		log.Printf("Error adding data: %v", err)
-		return fmt.Errorf("error adding data: %v", err)
+		return err
 	}
 	return nil
 }
@@ -40,7 +39,7 @@ func (a user) Delete(id string) error {
 	_, err := a.DB.Exec(`DELETE FROM public.api_users WHERE uuid = $1`, id)
 	if err != nil {
 		log.Printf("Error deleting data: %v", err)
-		return fmt.Errorf("error deleting data: %v", err)
+		return err
 	}
 	return nil
 }
@@ -50,7 +49,7 @@ func (a user) Get() ([]model.UserModel, error) {
 	err := a.DB.Select(&uu, `SELECT uuid id, name, lastname, birthdate, 0 age FROM public.api_users`)
 	if err != nil {
 		log.Printf("Error getting data: %v", err)
-		return uu, fmt.Errorf("error getting data: %v", err)
+		return uu, err
 	}
 	for i, b := range uu {
 		uu[i].Age = tools.Age(*b.Birthdate)

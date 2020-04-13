@@ -5,10 +5,10 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"net/http"
+	"webserverREST/internal/constants"
 	"webserverREST/internal/model"
 	"webserverREST/internal/repositories"
 	"webserverREST/internal/tools"
-	"webserverREST/internal/web/binders"
 )
 
 type User interface {
@@ -27,7 +27,7 @@ func NewUser(repo repositories.User) User {
 }
 
 func (u user) Create(w http.ResponseWriter, req *http.Request) {
-	if response := context.Get(req, binders.Body); response != nil {
+	if response := context.Get(req, constants.Body); response != nil {
 		response := response.(*model.UserModel)
 		if (response.Name != nil) && (response.Lastname != nil) && (response.Birthdate != nil) {
 			response.Id = tools.GenUUID()
@@ -59,7 +59,7 @@ func (u user) Delete(w http.ResponseWriter, req *http.Request) {
 }
 
 func (u user) Edit(w http.ResponseWriter, req *http.Request) {
-	if response := context.Get(req, binders.Body); response != nil {
+	if response := context.Get(req, constants.Body); response != nil {
 		response := response.(*model.UserModel)
 		if response.Id != nil {
 			err := u.repo.Put(response)
